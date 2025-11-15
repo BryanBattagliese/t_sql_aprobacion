@@ -28,7 +28,7 @@ BEGIN
         WHERE C.comp_producto = @codigo_producto
     )
     BEGIN
-        DECLARE el_cursor CURSOR LOCAL FAST_FORWARD FOR
+        DECLARE el_cursor CURSOR FOR
             SELECT C.comp_componente,
                    P.prod_precio,
                    C.comp_cantidad
