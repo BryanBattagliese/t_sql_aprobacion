@@ -28,6 +28,7 @@ BEGIN
         WHERE C.comp_producto = @codigo_producto
     )
     BEGIN
+       -- Cursor que recorre todos los componentes de ese prod compuesto
         DECLARE el_cursor CURSOR FOR
             SELECT C.comp_componente,
                    P.prod_precio,
@@ -39,7 +40,7 @@ BEGIN
 
         OPEN el_cursor;
         FETCH NEXT FROM el_cursor
-            INTO @componente, @precio_componente, @cantidad_componente;
+            INTO @componente, @precio_componente, @cantidad_componente
 
         WHILE @@FETCH_STATUS = 0
         BEGIN
@@ -50,27 +51,25 @@ BEGIN
                 WHERE C1.comp_producto = @componente
             )
             BEGIN
-                SET @precio_final = @precio_final
-                                  + @precio_componente * @cantidad_componente;
+                SET @precio_final = @precio_final + @precio_componente * @cantidad_componente;
             END
-            -- El componente ES, a su vez, un producto compuesto: recursion
+            
+            -- El componente ES, a su vez, un producto compuesto: recursividadd
             ELSE
             BEGIN
-                SET @precio_final = @precio_final
-                                  + dbo.sumatoria_precio_componentes(@componente)
-                                  * @cantidad_componente;
-            END;
+                SET @precio_final = @precio_final + dbo.sumatoria_precio_componentes(@componente) * @cantidad_componente
+            END
 
             FETCH NEXT FROM el_cursor
-                INTO @componente, @precio_componente, @cantidad_componente;
-        END;
+                INTO @componente, @precio_componente, @cantidad_componente
+        END
 
-        CLOSE el_cursor;
-        DEALLOCATE el_cursor;
-    END;
+        CLOSE el_cursor
+        DEALLOCATE el_cursor
+    END
 
-    RETURN @precio_final;
-END;
+    RETURN @precio_final
+END
 GO
 
 
@@ -81,7 +80,6 @@ GO
 CREATE PROCEDURE dbo.actualizar_precios_combos
 AS
 BEGIN
-    SET NOCOUNT ON;
 
     UPDATE P
     SET prod_precio = dbo.sumatoria_precio_componentes(P.prod_codigo) * 0.9
@@ -90,8 +88,8 @@ BEGIN
         SELECT 1
         FROM Composicion C
         WHERE C.comp_producto = P.prod_codigo
-    );
-END;
+    )
+END
 GO
 
 
@@ -100,15 +98,14 @@ GO
       Cuando cambia un producto (por ej. precio de componente
       o alta/modificación de un combo), recalcula precios de combos
    ========================================================= */
+
 CREATE TRIGGER trg_actualizar_combos_por_producto
 ON Producto
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-    EXEC dbo.actualizar_precios_combos;
-END;
+    dbo.actualizar_precios_combos
+END
 GO
 
 
@@ -117,15 +114,14 @@ GO
       Cuando cambia la composición (componentes/cantidades)
       recalcula precios de combos
    ========================================================= */
+
 CREATE TRIGGER trg_actualizar_combos_por_composicion
 ON Composicion
 AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-    EXEC dbo.actualizar_precios_combos;
-END;
+   dbo.actualizar_precios_combos
+END
 GO
 
 
